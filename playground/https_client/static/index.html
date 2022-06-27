@@ -1,0 +1,55 @@
+<html>
+    <body>
+        <button onclick="doUpload()">test upload</button>
+
+        <button onclick="testWriting()">test writing</button>
+
+        <button onclick="testAppending()">test appending</button>
+    </body>
+    <script>
+        function doUpload() {
+            function randomChars() {
+                        let string = "";
+                        let choices = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+
+                        for (let i = 0; i < 8; i++) {
+                        string += choices.charAt(Math.floor(Math.random() * choices.length));
+                        }
+                        return string;
+                    }
+
+                    const contentStream = new ReadableStream({
+                        start(controller) {
+                            setInterval(() => {
+                                controller.enqueue(randomChars());
+                            }, 500)
+                        },
+                        cancel() {
+                            console.log("closed");
+                        }
+                    });
+
+                    fetch("/", {
+                        method: 'POST',
+                        body: contentStream
+                    });
+        }
+
+        async function testWriting() {
+                    const fileHandle = await window.showSaveFilePicker();
+                    const writableStream = await fileHandle.createWritable({keepExistingData:true});
+                    await writableStream.seek((await fileHandle.getFile()).size);
+                    await writableStream.write("test");
+                    await writableStream.close();
+                    console.log("finished");
+        }
+
+        async function testAppending() {
+                    const readFileHandle = await window.showOpenFilePicker();
+                    const writableExisting = await readFileHandle[0].createWritable({keepExistingData: true});
+                    await writableExisting.seek((await readFileHandle[0].getFile()).size);
+                    await writableExisting.write("testing");
+                    await writableExisting.close();
+        }
+    </script>
+</html>
