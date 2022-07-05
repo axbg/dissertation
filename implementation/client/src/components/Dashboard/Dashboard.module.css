@@ -1,0 +1,18 @@
+.Dashboard {
+    margin: 0 auto;
+    width: 50%;
+    box-sizing: border-box;
+}
+
+.flexContainer {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+h2 {
+    margin: 0;
+}
+
+.cursorPointer {
+    cursor: pointer;
+}

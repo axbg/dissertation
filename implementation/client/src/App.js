@@ -1,24 +1,31 @@
-import logo from './logo.svg';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
+import Dashboard from './components/Dashboard/Dashboard';
+import Upload from './components/Upload/Upload';
+import Download from './components/Download/Download';
+import Login from './components/Login/Login';
+import Register from './components/Register/Register';
+import { Outlet } from "react-router-dom";
+import { useState } from 'react';
 
 function App() {
+  const [privateKey, setPrivateKey] = useState(null);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <BrowserRouter>
+    <div className='container'>
+      <div className='innerContainer'>
+          <Routes>
+            <Route path='/' element={<Dashboard/>}/>
+            <Route path='/upload' element={<Upload/>}/>
+            <Route path='/download' element={<Download/>}/>
+            <Route path='/login' element={<Login/>}/>
+            <Route path='/register' element={<Register/>}/>
+          </Routes>
+        <Outlet/>
+      </div>
     </div>
+    </BrowserRouter>
   );
 }
 
