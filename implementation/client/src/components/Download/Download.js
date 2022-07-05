@@ -1,13 +1,21 @@
 import React from 'react';
 import styles from './Download.module.css';
+import FileManager from '../FileManager/FileManager';
 
 const Download = () => {
-  const items = ['file1.pdf', 'file2.pdf', 'file2.pdf','file2.pdf','file2.pdf','file2.pdf','file2.pdf','file2.pdf','file2.pdf','file2.pdf','file2.pdf','file2.pdf',]
+  const files = [
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+    ['file1.pdf', '44788bac-1f74-429b-8b73-631eff8b6763', '5233', '07/07/2022'],
+  ];
 
   return <div className={styles.Download}>
-    <ul>
-
-    </ul>
+    <h3>Download files</h3>
+    <FileManager files={files} />
   </div>
 };
 

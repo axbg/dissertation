@@ -1,5 +1,6 @@
 import React, {useCallback, useState} from 'react';
 import styles from './Upload.module.css';
+import { generateSecurePassword } from '../../shared/crypto';
 
 const Upload = () => {
   // 1MB
@@ -17,24 +18,31 @@ const Upload = () => {
     }), []);
 
   const handleOnUploadButtonClick = useCallback((async() => {
+    // GENERATE PASSWORD
+    const password = generateSecurePassword();
+
+    // INIT FILE HANDLING
     const file = await fileHandle.getFile();
     const fileStream = await file.stream();
     const fileReader = await fileStream.getReader();
 
-    fileReader.read()
-    .then(({done, value}) => console.log(value));
+    // STREAM FILE AND ENCRYPT IN CHUNKS
+    // UPLOAD EACH CHUNK TO SERVER
+    fileReader.read().then(({done, value}) => console.log(value));
 
+    // ENCRYPT GENERATED PASSWORD WITH PUBLIC KEY
+
+    // 
+  
   }), [fileHandle]);
 
-  const encryptChunk = (chunk) => {
-    console.log("chunk");
-    console.log("encrypting");
-  };
-  
   return (
   <div className={styles.Upload}>
-    <button onClick={handleOnSelectFileButtonClick}>Select file</button>
+    <label className={styles.cursorPointer} onClick={handleOnSelectFileButtonClick}>Click to select a file for upload</label>
+    <br/>
+    <br/>
     <p>Selected file: {filename}</p>
+    <br/>
     <button onClick={handleOnUploadButtonClick}>Upload</button>
   </div>
   );

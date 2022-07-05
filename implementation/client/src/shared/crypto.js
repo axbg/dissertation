@@ -26,7 +26,7 @@ function base64ToArrayBuffer(b64) {
     }
 
     return byteArray;
-}
+};
 
 export const generateRSAKeyPair = async (privateKeyPassword) => {
     const keyPair = await window.crypto.subtle.generateKey({
@@ -46,7 +46,7 @@ export const generateRSAKeyPair = async (privateKeyPassword) => {
     const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
 
     return [privateKey, publicKey];
-}
+};
 
 export const generateSecurePassword = () => {
     // TODO use real key
@@ -59,4 +59,4 @@ export const decryptPrivateKey = async (privateKey, privateKeyPassword) => {
     const uncPrivateKey = await window.crypto.subtle.unwrapKey("pkcs8", privateKey, symmetricKey, { name: "AES-GCM", iv: new Uint8Array(12) }, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["decrypt"]);
     const exportedKey = await window.crypto.subtle.exportKey("pkcs8", uncPrivateKey);
     return arrayBufferToBase64(exportedKey);
-}
+};

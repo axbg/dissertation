@@ -1,0 +1,34 @@
+.File {
+    display: flex;
+    width: 75%;
+    justify-content: space-between;
+    margin: 0 auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.hidden {
+    display: none;
+}
+
+.cursorPointer {
+    cursor: pointer;
+    color: blue;
+}
+
+.icon {
+    padding-right: 10px;
+}
+
+.flexChild {
+  flex-basis: 20%; 
+  flex-grow: 0; 
+}
+
+.isHeader {
+    margin-bottom: 30px;
+}
+
+.isRow {
+    margin-bottom: 10px;
+}

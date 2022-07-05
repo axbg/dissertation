@@ -1,1 +1,9 @@
 .Upload {}
+
+.hidden {
+    display: none;
+}
+
+.cursorPointer {
+    cursor: pointer;
+}

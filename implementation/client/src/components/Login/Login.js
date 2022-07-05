@@ -40,6 +40,9 @@ const Login = () => {
       // DECRYPT PRIVATE KEY
       const decPrivateKey = await decryptPrivateKey(encryptedPrivate, password);
 
+      // EXECUTE LOGIN PROCEDURE
+      // STORE PUBLIC KEY 
+
       // STORE DATA
       window.localStorage.setItem("loggedIn", true);
       window.localStorage.setItem("username", username);

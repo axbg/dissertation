@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.Dashboard}>
-      <h2>Hello {username}</h2>
+      <h2>Hello {username}!</h2>
       <h3>What would you like to do?</h3>
 
       {!isLoggedIn ?
@@ -37,7 +37,8 @@ const Dashboard = () => {
           <DashboardTile name="Upload" path="/upload" />
           <DashboardTile name="Download" path="/download" />
         </div>}
-
+        <br/>
+        <br/>
         {isLoggedIn ? 
         <h4 onClick={handleLogout} className={styles.cursorPointer}>Logout?</h4>
         : <div></div>}
