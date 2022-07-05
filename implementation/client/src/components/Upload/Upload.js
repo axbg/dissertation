@@ -38,7 +38,7 @@ const Upload = () => {
 
   return (
   <div className={styles.Upload}>
-    <label className={styles.cursorPointer} onClick={handleOnSelectFileButtonClick}>Click to select a file for upload</label>
+    <label className={styles.uploadLabel} onClick={handleOnSelectFileButtonClick}>Click to select a file for upload</label>
     <br/>
     <br/>
     <p>Selected file: {filename}</p>

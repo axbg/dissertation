@@ -3,3 +3,9 @@
 .hidden {
     display: none;
 }
+
+.uploadLabel {
+    cursor: pointer;
+    border: 1px dotted black;
+    padding: 5px;
+}

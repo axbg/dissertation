@@ -63,7 +63,7 @@ const Login = () => {
       <br/>
       <br/>
       <input type="file" id="privKey" className={styles.hidden} onChange={handleFileUpload}></input>
-      <label htmlFor="privKey">Click to select your encrypted private key</label>
+      <label htmlFor="privKey" className={styles.uploadLabel}>Click to select your encrypted private key</label>
       <br/>
       <br/>
       <br/>
