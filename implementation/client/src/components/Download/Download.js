@@ -37,7 +37,7 @@ const Download = () => {
       <h3 className={styles.titleContainer}>Download files</h3>
       <FontAwesomeIcon icon={faRefresh} className={styles.cursorPointer} onClick={handleRefreshClick} />
     </div>
-    <FileManager files={files} />
+    <FileManager files={files} refresh={fetchFiles}/>
   </div>
 };
 

@@ -2,18 +2,36 @@ import React from 'react';
 import styles from './File.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faFile } from '@fortawesome/free-solid-svg-icons';
+import { CONSTANTS } from '../../shared/constants';
 
 const File = (props) => {
   const handleFileDownload = () => {
     console.log("yes");
   }
 
-  const handleFileDelete = () => {
-    console.log("yes2");
+  const handleFileDelete = async () => {
+    const removeFile = await fetch(CONSTANTS.BACKEND_URL + "/file/remove",
+    {
+      method: "POST",
+      headers: new Headers({
+        "Content-Type": "application/json"
+      }),
+      body: JSON.stringify({
+        token: window.localStorage.getItem("token"),
+        uuid: props.col2
+      })
+    });
+    const removeFileJson = await removeFile.json();
+
+    if(removeFileJson) {
+      props.refresh();
+    } else {
+      alert("An error popped up");
+    }
   }
 
   const isReady = () => {
-    return props.col4 === 'ready';
+    return props.col5 === 'UPLOADED';
   }
 
   return (

@@ -78,4 +78,18 @@ public class DocumentController {
                 .flatMapMany(user -> fileRepository.findFileDocumentsByUserUuid(user.getUuid()))
                 .map(FileDocumentDto::fromFileDocument);
     }
+
+    @PostMapping("/remove")
+    public Mono<ResponseEntity<Boolean>> removeFile(@RequestBody RemoveFileDto dto) {
+        return userRepository.findUserDocumentByToken(dto.getToken())
+                .flatMap(user -> Mono.zip(Mono.just(user), fileRepository.findFileDocumentByUuid(dto.getUuid())))
+                .flatMap(tuple2 -> {
+                    if (tuple2.getT2().getUserUuid().equals(tuple2.getT1().getUuid())) {
+                        return fileRepository.deleteById(tuple2.getT2().getUuid())
+                                .then(Mono.fromCallable(() -> ResponseEntity.ok(true)));
+                    } else {
+                        return Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.FORBIDDEN).body(false));
+                    }
+                });
+    }
 }
