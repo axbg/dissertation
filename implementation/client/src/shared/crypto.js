@@ -44,8 +44,9 @@ export const generateRSAKeyPair = async (privateKeyPassword) => {
     const privateKey = await window.crypto.subtle.wrapKey("pkcs8", keyPair.privateKey, symmetricKey, { name: "AES-GCM", iv: new Uint8Array(12) });
 
     const publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+    const base64publicKey = arrayBufferToBase64(await window.crypto.subtle.exportKey("spki", publicKey));
 
-    return [privateKey, publicKey];
+    return [privateKey, base64publicKey];
 };
 
 export const generateSecurePassword = () => {

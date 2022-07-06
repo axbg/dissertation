@@ -6,10 +6,17 @@ import { useNavigate } from 'react-router-dom';
 const Register = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleUsernameUpdate = (input) => {
     if(!!input && !!input.target && !!input.target.value && input.target.value !== "") {
       setUsername(input.target.value);
+    }
+  }
+
+  const handlePasswordUpdate = (input) => {
+    if(!!input && !!input.target && !!input.target.value && input.target.value !== "") {
+      setPassword(input.target.value);
     }
   }
 
@@ -44,6 +51,10 @@ const Register = () => {
   return <div className={styles.Login}>
       <p>Choose a username</p>
       <input type="text" placeholder='username' value={username} onChange={handleUsernameUpdate}></input>
+      <br/>
+      <br/>
+      <p>Choose an account password</p>
+      <input type="text" placeholder='password' value={password} onChange={handlePasswordUpdate}></input>
       <br/>
       <br/>
       <button onClick={handleSubmit}>Register</button>

@@ -16,6 +16,11 @@
     color: blue;
 }
 
+.disabled {
+    cursor: wait;
+    color: gray;
+}
+
 .icon {
     padding-right: 10px;
 }

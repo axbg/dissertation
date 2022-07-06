@@ -7,6 +7,7 @@ import {useNavigate} from 'react-router-dom';
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [masterPassword, setMasterPassword] = useState("");
   const [encryptedPrivate, setEncryptedPrivate] = useState(null);
   const navigate = useNavigate();
 
@@ -19,6 +20,12 @@ const Login = () => {
   const handlePasswordUpdate = (input) => {
     if(!!input && !!input.target && !!input.target.value && input.target.value !== "") {
       setPassword(input.target.value);
+    }
+  }
+
+  const handleMasterPasswordUpdate = (input) => {
+    if(!!input && !!input.target && !!input.target.value && input.target.value !== "") {
+      setMasterPassword(input.target.value);
     }
   }
 
@@ -38,7 +45,7 @@ const Login = () => {
 
   const handleSubmit = async () => {
       // DECRYPT PRIVATE KEY
-      const decPrivateKey = await decryptPrivateKey(encryptedPrivate, password);
+      const decPrivateKey = await decryptPrivateKey(encryptedPrivate, masterPassword);
 
       // EXECUTE LOGIN PROCEDURE
       // STORE PUBLIC KEY 
@@ -57,8 +64,12 @@ const Login = () => {
       <input type="text" placeholder='username' value={username} onChange={handleUsernameUpdate}></input>
       <br/>
       <br/>
-      <p>Insert your master password</p>
-      <input type="text" placeholder='password' value={password} onChange={handlePasswordUpdate}></input>
+      <p>Insert your account password</p>
+      <input type="password" placeholder='password' value={username} onChange={handlePasswordUpdate}></input>
+      <br/>
+      <br/>
+      <p>Insert your master password (the one generated on the register step)</p>
+      <input type="password" placeholder='masterPassword' value={password} onChange={handleMasterPasswordUpdate}></input>
       <br/>
       <br/>
       <br/>

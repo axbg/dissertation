@@ -12,6 +12,10 @@ const File = (props) => {
     console.log("yes2");
   }
 
+  const isReady = () => {
+    return props.col4 === 'ready';
+  }
+
   return (
     <div className={`${styles.File} ${props.isHeader ? styles.isHeader : styles.isRow}`}>
       <div className={styles.flexChild}>
@@ -28,10 +32,17 @@ const File = (props) => {
         <span>{props.col4}</span>
       </div>
       <div className={styles.flexChild}>
-        {props.isHeader ? <span>{props.col5}</span> : <span onClick={handleFileDownload} className={styles.cursorPointer}>{props.col5}</span>}
+        <span>{props.col5}</span>
       </div>
       <div className={styles.flexChild}>
-        {props.isHeader ? <span>{props.col6}</span> : <span onClick={handleFileDelete} className={styles.cursorPointer}>{props.col6}</span>}
+        {props.isHeader ? <span>{props.col6}</span> 
+        : isReady() ? <span onClick={handleFileDownload} className={styles.cursorPointer}>{props.col6}</span>
+          : <span className={styles.disabled}>{props.col6}</span>}
+      </div>
+      <div className={styles.flexChild}>
+        {props.isHeader ? <span>{props.col7}</span> 
+        : isReady() ? <span onClick={handleFileDelete} className={styles.cursorPointer}>{props.col7}</span>
+          : <span className={styles.disabled}>{props.col7}</span>}
       </div>
     </div>);
 };
