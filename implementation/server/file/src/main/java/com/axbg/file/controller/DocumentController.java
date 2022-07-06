@@ -1,0 +1,74 @@
+package com.axbg.file.controller;
+
+import com.axbg.file.document.FileDocument;
+import com.axbg.file.dto.CreateFileUploadResponseDto;
+import com.axbg.file.dto.FinalizeUploadResponseDto;
+import com.axbg.file.dto.UserTokenDto;
+import com.axbg.file.pojo.FileTypeEnum;
+import com.axbg.file.repository.FileRepository;
+import com.axbg.file.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+
+@RestController
+@RequestMapping("/file")
+public class DocumentController {
+    private static final String FILE_TEMP_LOCATION = "/Users/axbg/Desktop/temporary";
+    private static final String CHUNK_SEPARATOR = "_";
+
+    @Autowired
+    private FileRepository fileRepository;
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping("/upload/create")
+    public Mono<ResponseEntity<CreateFileUploadResponseDto>> createFileUpload(@RequestBody UserTokenDto dto) {
+        return userRepository.findUserDocumentByToken(dto.getToken())
+                .flatMap(user -> {
+                    FileDocument fileDocument = new FileDocument();
+                    fileDocument.setInsertedAt(new Date());
+                    fileDocument.setStatus(FileTypeEnum.UPLOADING);
+                    fileDocument.setUserUuid(user.getUuid());
+                    return fileRepository.save(fileDocument);
+                }).flatMap(document -> {
+                    document.setLocation(FILE_TEMP_LOCATION + "/" + document.getUuid());
+                    return fileRepository.save(document);
+                }).flatMap(fileDocument -> Mono.fromCallable(() -> ResponseEntity.ok(new CreateFileUploadResponseDto(fileDocument.getUuid()))))
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.FORBIDDEN).body(null));
+    }
+
+    @PostMapping("/upload/chunk")
+    public Mono<ResponseEntity<Boolean>> uploadChunk(@RequestPart String uuid, @RequestPart String order, @RequestPart("chunk") Mono<FilePart> file) {
+        return fileRepository.findFileDocumentByUuid(uuid)
+                .flatMap(fileDocument -> file)
+                .flatMap(fileHandler -> {
+                    Path destination = Paths.get(FILE_TEMP_LOCATION + "/" + uuid + CHUNK_SEPARATOR + order);
+
+                    return fileHandler.transferTo(destination)
+                            .then(fileHandler.delete())
+                            .then(Mono.fromCallable(() -> ResponseEntity.ok(true)));
+                })
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false));
+    }
+
+    @PostMapping("/upload/finalize")
+    public Mono<ResponseEntity<Boolean>> finalizeUpload(@RequestBody FinalizeUploadResponseDto dto) {
+        return fileRepository.findFileDocumentByUuid(dto.getUuid())
+                .flatMap(file -> {
+                    file.setParts(dto.getParts());
+                    file.setStatus(FileTypeEnum.UPLOADED);
+                    file.setOriginalName(dto.getFilename());
+                    return fileRepository.save(file);
+                })
+                .then(Mono.fromCallable(() -> ResponseEntity.ok(true)))
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false));
+    }
+}

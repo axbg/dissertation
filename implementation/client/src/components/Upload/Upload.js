@@ -1,14 +1,16 @@
 import React, { useCallback, useState } from 'react';
 import styles from './Upload.module.css';
-import { generateSecurePassword, encryptWithPublicKey, arrayBufferToBase64, generateSymmetricKey, exportSymmetricKey, symmetricEncrypt } from '../../shared/crypto';
+import { encryptWithPublicKey, arrayBufferToBase64, generateSymmetricKey, exportSymmetricKey, symmetricEncrypt } from '../../shared/crypto';
 import { concat } from 'uint8arrays/concat';
 import { splitChunk, hardCopyArray } from '../../shared/utils';
+import { CONSTANTS } from '../../shared/constants';
+import {useNavigate} from 'react-router-dom';
 
 const Upload = () => {
   // 1MB
   const CHUNK_SIZE = 1000000;
 
-  let uploadInProgress = false;
+  const finishedUploads = [];
   const uploadErrors = [];
 
   let currentChunk = new Uint8Array(0);
@@ -16,7 +18,8 @@ const Upload = () => {
 
   const [fileHandle, setFileHandle] = useState(null);
   const [filename, setFilename] = useState("No file was selected");
-  const [fileId, setFileId] = useState("");
+
+  const navigate = useNavigate();
 
   const handleOnSelectFileButtonClick = useCallback((async () => {
     const openFileHandler = await window.showOpenFilePicker();
@@ -27,9 +30,9 @@ const Upload = () => {
     }
   }), []);
 
-  const handleChunk = (chunk, key) => {
+  const handleChunk = (chunk, key, fileId) => {
     do {
-      if((currentChunk.length + chunk.length) <= CHUNK_SIZE) {
+      if ((currentChunk.length + chunk.length) <= CHUNK_SIZE) {
         currentChunk = concat([currentChunk, chunk]);
         chunk = null;
       } else {
@@ -40,44 +43,70 @@ const Upload = () => {
 
         currentChunk = concat([currentChunk, chunk1]);
         chunkOrder += 1;
-  
-        encryptChunk(hardCopyArray(currentChunk), chunkOrder, key);
+
+        encryptChunk(hardCopyArray(currentChunk), chunkOrder, key, fileId);
 
         currentChunk = new Uint8Array(0);
       }
-    } while(chunk);
+    } while (chunk);
   }
 
-  const encryptChunk = async (chunk, chunkOrder, key) => {
+  const encryptChunk = async (chunk, chunkOrder, key, fileId) => {
     const encryptedChunk = await symmetricEncrypt(chunk, key);
-    uploadChunk(encryptedChunk, chunkOrder)
+    uploadChunk(encryptedChunk, chunkOrder, fileId)
   }
 
-  const uploadChunk = (chunk, order) => {
-    uploadInProgress = true;
+  const uploadChunk = async (chunk, order, fileId) => {
+    const blob = new Blob([chunk]);
+    const formData = new FormData();
+    formData.append('chunk', blob, filename);
+    formData.append('order', new String(order));
+    formData.append('uuid', fileId);
 
     // UPLOAD CHUNK 
-    
-    console.log(chunk);
-    console.log(order);
-    uploadInProgress = false;
+    const uploadChunk = await fetch(CONSTANTS.BACKEND_URL + "/file/upload/chunk",
+      {
+        method: "POST",
+        body: formData
+      });
+    const uploadChunkJson = await uploadChunk.json();
+    finishedUploads.push(order);
   }
 
-  const finishUpload = async (key) => {
+  const finishUpload = async (key, fileId) => {
     chunkOrder += 1;
-    encryptChunk(currentChunk, chunkOrder, key);
+    encryptChunk(currentChunk, chunkOrder, key, fileId);
 
     currentChunk = new Uint8Array(0);
-    chunkOrder = 0;
 
     // WAIT UNTIL NO MORE CALLS ARE IN PROGRESS
-    // check uploadInProgress
+    waitAndFinish(fileId, chunkOrder);
+  }
 
-    // CREATE FILE UPLOAD FINISHED ENTRY
+  const waitAndFinish = async (fileId, chunkOrder) => {
+    if (finishedUploads.length !== chunkOrder) {
+      setTimeout(waitAndFinish, 100, fileId, chunkOrder);
+    } else {
+      // CREATE FILE UPLOAD FINISHED ENTRY
+      const finalizeUpload = await fetch(CONSTANTS.BACKEND_URL + "/file/upload/finalize",
+        {
+          method: "POST",
+          headers: new Headers({
+            "Content-Type": "application/json"
+          }),
+          body: JSON.stringify({
+            uuid: fileId,
+            parts: chunkOrder,
+            filename: filename
+          })
+        });
 
+      chunkOrder = 0;
 
-
-    // REDIRECT TO DOWNLOAD PAGE
+      alert("File upload finished");
+      // REDIRECT TO DOWNLOAD PAGE
+      navigate("/download", {replace: false})
+    }
   }
 
   const handleOnUploadButtonClick = useCallback((async () => {
@@ -95,32 +124,43 @@ const Upload = () => {
     const fileReader = await fileStream.getReader();
 
     // CREATE FILE UPLOAD ENTRY
-
+    const createFile = await fetch(CONSTANTS.BACKEND_URL + "/file/upload/create",
+      {
+        method: "POST",
+        headers: new Headers({
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+          token: window.localStorage.getItem("token")
+        })
+      });
+    const createFileJson = await createFile.json();
+    const fileId = createFileJson.uuid;
 
     // STREAM FILE AND ENCRYPT IN CHUNKS
     // UPLOAD EACH CHUNK TO SERVER
     fileReader.read()
-      .then(function processChunk({ done, value }) { 
-        if(done) {
-          finishUpload(symmetricKey);
+      .then(function processChunk({ done, value }) {
+        if (done) {
+          finishUpload(symmetricKey, fileId);
           return;
         }
 
-        handleChunk(value, symmetricKey);
+        handleChunk(value, symmetricKey, fileId);
         return fileReader.read().then(processChunk);
       });
   }), [fileHandle]);
 
-return (
-  <div className={styles.Upload}>
-    <label className={styles.uploadLabel} onClick={handleOnSelectFileButtonClick}>Click to select a file for upload</label>
-    <br />
-    <br />
-    <p>Selected file: {filename}</p>
-    <br />
-    <button onClick={handleOnUploadButtonClick}>Upload</button>
-  </div>
-);
+  return (
+    <div className={styles.Upload}>
+      <label className={styles.uploadLabel} onClick={handleOnSelectFileButtonClick}>Click to select a file for upload</label>
+      <br />
+      <br />
+      <p>Selected file: {filename}</p>
+      <br />
+      <button onClick={handleOnUploadButtonClick}>Upload</button>
+    </div>
+  );
 };
 
 export default Upload;

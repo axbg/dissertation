@@ -58,11 +58,10 @@ public class CryptoService {
     public Mono<String> generateSafeToken() {
         return Mono.fromCallable(() -> {
             SecureRandom random = new SecureRandom();
-            byte bytes[] = new byte[20];
+            byte[] bytes = new byte[20];
             random.nextBytes(bytes);
             Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-            String token = encoder.encodeToString(bytes);
-            return token;
+            return encoder.encodeToString(bytes);
         });
     }
 
