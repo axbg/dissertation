@@ -6,8 +6,8 @@ const FileManager = (props) => {
   return (<div>
     <File isHeader={true} showIcons={false} col1='Filename' col2='UUID' col3='Size' col4='Status' col5='Uploaded at' col6='Download' col7='Remove' />
     <div className={styles.FileManager}>
-    {props.files.map((row, index) => (
-      <File key={index} isHeader={false} showIcons={true} col1={row[0]} col2={row[1]} col3={row[2]} col4={row[3]} col5={row[4]} col6='Download' col7='Remove' />
+    {props.files.map((entry) => (
+      <File key={entry.uuid} isHeader={false} showIcons={true} col1={entry.name} col2={entry.uuid} col3={entry.size} col4={entry.uploadedAt} col5={entry.status} col6='Download' col7='Remove' />
     ))}
     </div>
   </div>);

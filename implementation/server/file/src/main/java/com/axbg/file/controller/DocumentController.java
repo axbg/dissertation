@@ -1,9 +1,7 @@
 package com.axbg.file.controller;
 
 import com.axbg.file.document.FileDocument;
-import com.axbg.file.dto.CreateFileUploadResponseDto;
-import com.axbg.file.dto.FinalizeUploadResponseDto;
-import com.axbg.file.dto.UserTokenDto;
+import com.axbg.file.dto.*;
 import com.axbg.file.pojo.FileTypeEnum;
 import com.axbg.file.repository.FileRepository;
 import com.axbg.file.repository.UserRepository;
@@ -12,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.file.Path;
@@ -30,13 +29,14 @@ public class DocumentController {
     private UserRepository userRepository;
 
     @PostMapping("/upload/create")
-    public Mono<ResponseEntity<CreateFileUploadResponseDto>> createFileUpload(@RequestBody UserTokenDto dto) {
+    public Mono<ResponseEntity<CreateFileUploadResponseDto>> createFileUpload(@RequestBody CreateFileUploadDto dto) {
         return userRepository.findUserDocumentByToken(dto.getToken())
                 .flatMap(user -> {
                     FileDocument fileDocument = new FileDocument();
                     fileDocument.setInsertedAt(new Date());
                     fileDocument.setStatus(FileTypeEnum.UPLOADING);
                     fileDocument.setUserUuid(user.getUuid());
+                    fileDocument.setPassword(dto.getPassword());
                     return fileRepository.save(fileDocument);
                 }).flatMap(document -> {
                     document.setLocation(FILE_TEMP_LOCATION + "/" + document.getUuid());
@@ -70,5 +70,12 @@ public class DocumentController {
                 })
                 .then(Mono.fromCallable(() -> ResponseEntity.ok(true)))
                 .defaultIfEmpty(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false));
+    }
+
+    @PostMapping("/")
+    public Flux<FileDocumentDto> getFiles(@RequestBody GetFilesDto dto) {
+        return userRepository.findUserDocumentByToken(dto.getToken())
+                .flatMapMany(user -> fileRepository.findFileDocumentsByUserUuid(user.getUuid()))
+                .map(FileDocumentDto::fromFileDocument);
     }
 }

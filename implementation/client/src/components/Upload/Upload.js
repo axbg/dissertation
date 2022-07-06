@@ -131,7 +131,8 @@ const Upload = () => {
           "Content-Type": "application/json"
         }),
         body: JSON.stringify({
-          token: window.localStorage.getItem("token")
+          token: window.localStorage.getItem("token"),
+          password: encryptedPasswordB64
         })
       });
     const createFileJson = await createFile.json();
