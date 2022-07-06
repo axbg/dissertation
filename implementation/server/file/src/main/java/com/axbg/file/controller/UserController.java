@@ -3,6 +3,7 @@ package com.axbg.file.controller;
 import com.axbg.file.document.LoginAttemptDocument;
 import com.axbg.file.document.UserDocument;
 import com.axbg.file.dto.LoginAttemptDto;
+import com.axbg.file.dto.LoginAttemptFinalDto;
 import com.axbg.file.dto.LoginAttemptResponseDto;
 import com.axbg.file.dto.RegisterDto;
 import com.axbg.file.repository.LoginAttemptRepository;
@@ -21,7 +22,6 @@ import reactor.core.scheduler.Schedulers;
 import java.util.Base64;
 import java.util.Date;
 
-
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -36,25 +36,20 @@ public class UserController {
     @PostMapping("/register")
     public Mono<ResponseEntity<String>> register(@RequestBody RegisterDto dto) {
         return userRepository.findByUsername(dto.getUsername())
-                .flatMap(user -> {
-                    if (user == null) {
-                        return cryptoService.hash(dto.getPassword())
-                                .flatMap(password -> Mono.zip(Mono.just(password), cryptoService.generateSafeToken()))
-                                .flatMap(tuple -> {
-                                    UserDocument userDocument = new UserDocument();
-                                    userDocument.setUsername(dto.getUsername());
-                                    userDocument.setPassword(tuple.getT1());
-                                    userDocument.setPublicKey(dto.getPublicKey());
-                                    userDocument.setToken(tuple.getT2());
-                                    userDocument.setInsertedAt(new Date());
+                .flatMap(user -> Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User already exists")))
+                .switchIfEmpty(cryptoService.hash(dto.getPassword())
+                        .flatMap(password -> Mono.zip(Mono.fromCallable(() -> password), cryptoService.generateSafeToken()))
+                        .flatMap(tuple -> {
+                            UserDocument userDocument = new UserDocument();
+                            userDocument.setUsername(dto.getUsername());
+                            userDocument.setPassword(tuple.getT1());
+                            userDocument.setPublicKey(dto.getPublicKey());
+                            userDocument.setToken(tuple.getT2());
+                            userDocument.setInsertedAt(new Date());
 
-                                    return userRepository.save(userDocument);
-                                })
-                                .flatMap(registeredUser -> Mono.fromCallable(() -> ResponseEntity.ok(registeredUser.getUuid())));
-                    } else {
-                        return Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User already exists"));
-                    }
-                });
+                            return userRepository.save(userDocument);
+                        })
+                        .flatMap(registeredUser -> Mono.fromCallable(() -> ResponseEntity.ok(registeredUser.getUuid()))));
     }
 
     @PostMapping("/login/initialize")
@@ -74,7 +69,17 @@ public class UserController {
 
                     return Mono.zip(Mono.fromCallable(() -> tuple.getT2().getEncrypted()), loginAttemptRepository.save(loginAttemptDocument));
                 })
-                .flatMap(tuple -> Mono.fromCallable(() -> ResponseEntity.ok(new LoginAttemptResponseDto(Base64.getEncoder().encodeToString(tuple.getT1())))))
+                .flatMap(tuple -> Mono.fromCallable(() -> ResponseEntity.ok(new LoginAttemptResponseDto(Base64.getEncoder().encodeToString(tuple.getT1()), null))))
                 .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @PostMapping("/login/finalize")
+    public Mono<ResponseEntity<LoginAttemptResponseDto>> loginConfirm(@RequestBody LoginAttemptFinalDto dto) {
+        return cryptoService.hash(dto.getPassword())
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(hashedPassword -> userRepository.findUserDocumentByUsernameAndPassword(dto.getUsername(), hashedPassword))
+                .flatMap(user -> Mono.zip(Mono.just(user), loginAttemptRepository.findLoginAttemptDocumentByUserUuidAndSecretAndValidUntilAfter(user.getUuid(), dto.getSecret(), new Date())))
+                .flatMap(tuple -> Mono.fromCallable(() -> ResponseEntity.ok(new LoginAttemptResponseDto(tuple.getT1().getToken(), tuple.getT1().getPublicKey()))))
+                .defaultIfEmpty(new ResponseEntity<>(HttpStatus.FORBIDDEN));
     }
 }

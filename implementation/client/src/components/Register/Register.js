@@ -2,6 +2,7 @@ import React,  {useState} from 'react';
 import styles from './Register.module.css';
 import { generateRSAKeyPair, generateSecurePassword } from '../../shared/crypto';
 import { useNavigate } from 'react-router-dom';
+import { CONSTANTS } from '../../shared/constants';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -29,6 +30,18 @@ const Register = () => {
     const [privateKey, publicKey] = await generateRSAKeyPair(privateKeyPassword);
 
     // TODO POST REQUEST TO BACK-END WITH PUBLIC KEY
+    const registerResult = await fetch(CONSTANTS.BACKEND_URL + "/user/register", 
+    {
+      method: "POST",
+      headers: new Headers({
+        "Content-Type": "application/json"
+      }),
+      body: JSON.stringify({
+        username: username, 
+        password: password,
+        publicKey: publicKey
+      })
+    });
 
     // DOWNLOAD PRIVATE KEY
     alert("Select where to store the asymmetric private key");
@@ -54,7 +67,7 @@ const Register = () => {
       <br/>
       <br/>
       <p>Choose an account password</p>
-      <input type="text" placeholder='password' value={password} onChange={handlePasswordUpdate}></input>
+      <input type="password" placeholder='password' value={password} onChange={handlePasswordUpdate}></input>
       <br/>
       <br/>
       <button onClick={handleSubmit}>Register</button>

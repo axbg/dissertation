@@ -9,4 +9,6 @@ import reactor.core.publisher.Mono;
 public interface UserRepository extends ReactiveMongoRepository<UserDocument, String> {
     Mono<UserDocument> findByUsername(String username);
     Mono<UserDocument> findUserDocumentByUsernameAndPassword(String username, String password);
+
+    Mono<UserDocument> findUserDocumentByToken(String token);
 }

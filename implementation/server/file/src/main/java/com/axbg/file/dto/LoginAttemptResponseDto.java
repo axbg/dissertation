@@ -7,4 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class LoginAttemptResponseDto {
     private String secret;
+    private String publicKey;
 }
