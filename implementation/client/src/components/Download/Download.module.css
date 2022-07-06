@@ -1,1 +1,11 @@
 .Download {}
+
+.titleContainer {
+    display: inline-block;
+    margin-right: 30px;
+    user-select: none;
+}
+
+.cursorPointer {
+    cursor: pointer
+}

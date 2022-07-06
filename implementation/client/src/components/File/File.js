@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './File.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLaptopCode } from '@fortawesome/free-solid-svg-icons';
+import { faFile } from '@fortawesome/free-solid-svg-icons';
 
 const File = (props) => {
   const handleFileDownload = () => {
@@ -19,7 +19,7 @@ const File = (props) => {
   return (
     <div className={`${styles.File} ${props.isHeader ? styles.isHeader : styles.isRow}`}>
       <div className={styles.flexChild}>
-        <FontAwesomeIcon icon={faLaptopCode} className={props.showIcons ? styles.icon : styles.hidden} />
+        <FontAwesomeIcon icon={faFile} className={props.showIcons ? styles.icon : styles.hidden} />
         <span>{props.col1}</span>
       </div>
       <div className={styles.flexChild}>

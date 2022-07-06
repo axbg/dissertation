@@ -12,10 +12,10 @@ export const ab2str = (ab) => {
     return enc.decode(ab);
 }
 
-function arrayBufferToBase64(arrayBuffer) {
+export const arrayBufferToBase64 = (arrayBuffer) => {
     var byteArray = new Uint8Array(arrayBuffer);
     var byteString = '';
-    for(var i=0; i < byteArray.byteLength; i++) {
+    for (var i = 0; i < byteArray.byteLength; i++) {
         byteString += String.fromCharCode(byteArray[i]);
     }
     var b64 = window.btoa(byteString);
@@ -27,7 +27,7 @@ export const base64ToArrayBuffer = (b64) => {
     var byteString = window.atob(b64);
 
     var byteArray = new Uint8Array(byteString.length);
-    for(var i=0; i < byteString.length; i++) {
+    for (var i = 0; i < byteString.length; i++) {
         byteArray[i] = byteString.charCodeAt(i);
     }
 
@@ -68,8 +68,29 @@ export const decryptPrivateKey = async (privateKey, privateKeyPassword) => {
     return arrayBufferToBase64(exportedKey);
 };
 
-export const decryptWithPrivateKey = async(encodedPrivateKey, encryptedBytes) => {
+export const decryptWithPrivateKey = async (encodedPrivateKey, encryptedBytes) => {
     const privateKey = await window.crypto.subtle.importKey("pkcs8", base64ToArrayBuffer(encodedPrivateKey), { name: "RSA-OAEP", hash: "SHA-256" }, false, ['decrypt']);
-    const decryptedBytes = await window.crypto.subtle.decrypt({name: "RSA-OAEP"}, privateKey, encryptedBytes);
+    const decryptedBytes = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encryptedBytes);
     return decryptedBytes;
 };
+
+export const encryptWithPublicKey = async (encodedPublicKey, content) => {
+    const publicKey = await window.crypto.subtle.importKey("spki", base64ToArrayBuffer(encodedPublicKey), { name: "RSA-OAEP", hash: "SHA-256" }, false, ['encrypt']);
+    const encryptedBytes = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, content);
+    return encryptedBytes;
+}
+
+export const generateSymmetricKey = async () => {
+    return crypto.subtle.generateKey({
+        "name": "AES-GCM",
+        "length": 256
+    }, true, ['encrypt', 'decrypt']);
+}
+
+export const exportSymmetricKey = async (key) => {
+    return crypto.subtle.exportKey('jwk', key);
+}
+
+export const symmetricEncrypt = async(content, key) => {
+    return crypto.subtle.encrypt({"name": "AES-GCM", "iv": new Uint8Array(12)}, key, content);
+}

@@ -51,7 +51,6 @@ public class CryptoService {
                     LoginSecret loginSecret = new LoginSecret();
                     loginSecret.setPlain(token);
                     loginSecret.setEncrypted(encryptedSecret);
-                    System.out.println(token);
                     return Mono.just(loginSecret);
                 });
     }
