@@ -45,10 +45,6 @@ public class FileService {
             return FileTypeEnum.ERRORED;
         }
 
-        for(OrderedChunk chunk : chunks) {
-            chunk.getFile().delete();
-        }
-
         return FileTypeEnum.READY;
     }
 }

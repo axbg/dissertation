@@ -32,7 +32,7 @@ const Upload = () => {
     }
   }), []);
 
-  const handleChunk = (chunk, key, fileId) => {
+  const handleChunk = async (chunk, key, fileId) => {
     do {
       if ((currentChunk.length + chunk.length) <= CHUNK_SIZE) {
         currentChunk = concat([currentChunk, chunk]);
@@ -46,7 +46,7 @@ const Upload = () => {
         currentChunk = concat([currentChunk, chunk1]);
         chunkOrder += 1;
 
-        encryptChunk(hardCopyArray(currentChunk), chunkOrder, key, fileId);
+        await encryptChunk(hardCopyArray(currentChunk), chunkOrder, key, fileId);
 
         currentChunk = new Uint8Array(0);
       }
@@ -56,7 +56,7 @@ const Upload = () => {
   const encryptChunk = async (chunk, chunkOrder, key, fileId) => {
     size += chunk.length;
     const encryptedChunk = await symmetricEncrypt(chunk, key);
-    uploadChunk(encryptedChunk, chunkOrder, fileId)
+    await uploadChunk(encryptedChunk, chunkOrder, fileId)
   }
 
   const uploadChunk = async (chunk, order, fileId) => {
@@ -145,14 +145,14 @@ const Upload = () => {
     // STREAM FILE AND ENCRYPT IN CHUNKS
     // UPLOAD EACH CHUNK TO SERVER
     fileReader.read()
-      .then(function processChunk({ done, value }) {
+      .then(async function processChunk({ done, value }) {
         if (done) {
-          finishUpload(symmetricKey, fileId);
+          await finishUpload(symmetricKey, fileId);
           return;
         }
 
-        handleChunk(value, symmetricKey, fileId);
-        return fileReader.read().then(processChunk);
+        await handleChunk(value, symmetricKey, fileId);
+        return await fileReader.read().then(processChunk);
       });
   }), [fileHandle]);
 

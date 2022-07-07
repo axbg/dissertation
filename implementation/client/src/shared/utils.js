@@ -13,7 +13,7 @@ export const splitChunk = (position, chunk) => {
         }
 
         for (let i = 0, j = position; j < chunk.length; i++, j++) {
-            chunk2[i] = chunk[i];
+            chunk2[i] = chunk[j];
         }
 
         return [chunk1, chunk2];

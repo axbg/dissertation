@@ -36,14 +36,11 @@ const File = (props) => {
     try{
       storeChunk(await symmetricDecrypt(chunk, symmetricKey), writableStream);
     } catch(e) {
-      // an error is thrown for bigger files
-      console.log(e);
     }
   }
 
   const storeChunk = async (chunk, writableStream) => {
     await writableStream.write(chunk);
-    console.log(chunk);
   }
 
   const finishDownload = async (symmetricKey, writableStream) => {
