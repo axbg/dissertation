@@ -12,7 +12,7 @@ const File = (props) => {
 
   let currentChunk = new Uint8Array(0);
 
-  const handleChunk = async (chunk, key, writableStream) => {
+  const handleChunk = (chunk, key, writableStream) => {
     do {
       if ((currentChunk.length + chunk.length) <= CHUNK_SIZE) {
         currentChunk = concat([currentChunk, chunk]);
@@ -25,7 +25,7 @@ const File = (props) => {
 
         currentChunk = concat([currentChunk, chunk1]);
 
-        await decryptChunk(hardCopyArray(currentChunk), key, writableStream);
+        decryptChunk(hardCopyArray(currentChunk), key, writableStream);
 
         currentChunk = new Uint8Array(0);
       }
@@ -40,7 +40,7 @@ const File = (props) => {
   }
 
   const storeChunk = async (chunk, writableStream) => {
-    await writableStream.write(chunk);
+    writableStream.write(chunk);
   }
 
   const finishDownload = async (symmetricKey, writableStream) => {
@@ -68,11 +68,11 @@ const File = (props) => {
     fileReader.read()
       .then(async function processChunk({ done, value }) {
         if (done) {
-          await finishDownload(symmetricKey, writableStream);
+          finishDownload(symmetricKey, writableStream);
           return;
         }
 
-        await handleChunk(value, symmetricKey, writableStream);
+        handleChunk(value, symmetricKey, writableStream);
         return fileReader.read().then(processChunk);
       });
   }
