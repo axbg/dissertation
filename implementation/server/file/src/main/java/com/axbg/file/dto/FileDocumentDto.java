@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 public class FileDocumentDto {
     private String uuid;
     private String name;
-    private Integer size;
+    private String size;
     private String uploadedAt;
     private FileTypeEnum status;
 

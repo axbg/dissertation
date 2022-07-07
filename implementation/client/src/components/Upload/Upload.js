@@ -5,6 +5,7 @@ import { concat } from 'uint8arrays/concat';
 import { splitChunk, hardCopyArray } from '../../shared/utils';
 import { CONSTANTS } from '../../shared/constants';
 import {useNavigate} from 'react-router-dom';
+import { sizeFormat } from '../../shared/utils';
 
 const Upload = () => {
   // 1MB
@@ -15,6 +16,7 @@ const Upload = () => {
 
   let currentChunk = new Uint8Array(0);
   let chunkOrder = 0;
+  let size = 0;
 
   const [fileHandle, setFileHandle] = useState(null);
   const [filename, setFilename] = useState("No file was selected");
@@ -52,6 +54,7 @@ const Upload = () => {
   }
 
   const encryptChunk = async (chunk, chunkOrder, key, fileId) => {
+    size += chunk.length;
     const encryptedChunk = await symmetricEncrypt(chunk, key);
     uploadChunk(encryptedChunk, chunkOrder, fileId)
   }
@@ -97,7 +100,8 @@ const Upload = () => {
           body: JSON.stringify({
             uuid: fileId,
             parts: chunkOrder,
-            filename: filename
+            filename: filename,
+            size: sizeFormat(size, 2)
           })
         });
 
@@ -115,7 +119,7 @@ const Upload = () => {
     const exportedSymmetricKey = await exportSymmetricKey(symmetricKey);
 
     // ENCRYPT GENERATED PASSWORD WITH PUBLIC KEY
-    const encryptedPasswordBytes = await encryptWithPublicKey(window.localStorage.getItem("publicKey"), new Uint8Array(exportedSymmetricKey));
+    const encryptedPasswordBytes = await encryptWithPublicKey(window.localStorage.getItem("publicKey"), exportedSymmetricKey);
     const encryptedPasswordB64 = arrayBufferToBase64(encryptedPasswordBytes);
 
     // INIT FILE HANDLING

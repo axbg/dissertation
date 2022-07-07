@@ -88,9 +88,17 @@ export const generateSymmetricKey = async () => {
 }
 
 export const exportSymmetricKey = async (key) => {
-    return crypto.subtle.exportKey('jwk', key);
+    return crypto.subtle.exportKey('raw', key);
+}
+
+export const importSymmetricKey = async (key) => {
+    return crypto.subtle.importKey('raw', key, {"name": "AES-GCM"}, false, ['encrypt', 'decrypt']);
 }
 
 export const symmetricEncrypt = async(content, key) => {
     return crypto.subtle.encrypt({"name": "AES-GCM", "iv": new Uint8Array(12)}, key, content);
+}
+
+export const symmetricDecrypt = async(content, key) => {
+    return crypto.subtle.decrypt({"name": "AES-GCM", "iv": new Uint8Array(12)}, key, content);
 }

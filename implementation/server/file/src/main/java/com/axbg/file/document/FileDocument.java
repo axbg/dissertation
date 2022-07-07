@@ -19,7 +19,7 @@ public class FileDocument {
     private String temporaryLocation;
     private String password;
     private FileTypeEnum status;
-    private Integer size = 0;
+    private String size = "0";
     private int parts;
     private String userUuid;
     private Date insertedAt;

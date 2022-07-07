@@ -7,4 +7,5 @@ public class FinalizeUploadResponseDto {
     private String uuid;
     private Integer parts;
     private String filename;
+    private String size;
 }

@@ -1,4 +1,4 @@
-package com.axbg.file.pojo;
+package com.axbg.worker.pojo;
 
 public enum FileTypeEnum {
     UPLOADING,

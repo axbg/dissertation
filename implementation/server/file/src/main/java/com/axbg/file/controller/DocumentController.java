@@ -5,7 +5,12 @@ import com.axbg.file.dto.*;
 import com.axbg.file.pojo.FileTypeEnum;
 import com.axbg.file.repository.FileRepository;
 import com.axbg.file.repository.UserRepository;
+import com.axbg.file.service.WorkerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
@@ -13,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -21,12 +27,17 @@ import java.util.Date;
 @RequestMapping("/file")
 public class DocumentController {
     private static final String FILE_TEMP_LOCATION = "/Users/axbg/Desktop/temporary";
+    public static final String FILE_PERM_LOCATION = "/Users/axbg/Desktop/perm";
     private static final String CHUNK_SEPARATOR = "_";
+    private static final int CHUNK_SIZE = 1000016;
 
     @Autowired
     private FileRepository fileRepository;
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private WorkerService workerService;
 
     @PostMapping("/upload/create")
     public Mono<ResponseEntity<CreateFileUploadResponseDto>> createFileUpload(@RequestBody CreateFileUploadDto dto) {
@@ -39,7 +50,8 @@ public class DocumentController {
                     fileDocument.setPassword(dto.getPassword());
                     return fileRepository.save(fileDocument);
                 }).flatMap(document -> {
-                    document.setLocation(FILE_TEMP_LOCATION + "/" + document.getUuid());
+                    document.setTemporaryLocation(FILE_TEMP_LOCATION + "/" + document.getUuid());
+                    document.setLocation(FILE_PERM_LOCATION + "/" + document.getUuid());
                     return fileRepository.save(document);
                 }).flatMap(fileDocument -> Mono.fromCallable(() -> ResponseEntity.ok(new CreateFileUploadResponseDto(fileDocument.getUuid()))))
                 .defaultIfEmpty(ResponseEntity.status(HttpStatus.FORBIDDEN).body(null));
@@ -66,8 +78,10 @@ public class DocumentController {
                     file.setParts(dto.getParts());
                     file.setStatus(FileTypeEnum.UPLOADED);
                     file.setOriginalName(dto.getFilename());
+                    file.setSize(dto.getSize());
                     return fileRepository.save(file);
                 })
+                .flatMap(file -> workerService.createJob(file.getUuid(), file.getParts()))
                 .then(Mono.fromCallable(() -> ResponseEntity.ok(true)))
                 .defaultIfEmpty(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false));
     }
@@ -85,10 +99,48 @@ public class DocumentController {
                 .flatMap(user -> Mono.zip(Mono.just(user), fileRepository.findFileDocumentByUuid(dto.getUuid())))
                 .flatMap(tuple2 -> {
                     if (tuple2.getT2().getUserUuid().equals(tuple2.getT1().getUuid())) {
+                        File file = new File(tuple2.getT2().getLocation());
+                        file.delete();
                         return fileRepository.deleteById(tuple2.getT2().getUuid())
                                 .then(Mono.fromCallable(() -> ResponseEntity.ok(true)));
                     } else {
                         return Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.FORBIDDEN).body(false));
+                    }
+                });
+    }
+
+    @PostMapping("/notify")
+    public Mono<ResponseEntity<Boolean>> notified(@RequestBody FileResultDto result) {
+        return fileRepository.findFileDocumentByUuid(result.getUuid())
+                .flatMap(file -> {
+                    file.setStatus(result.getStatus());
+                    return fileRepository.save(file);
+                }).then(Mono.just(ResponseEntity.ok(true)));
+    }
+
+    @PostMapping("/key")
+    public Mono<ResponseEntity<FileKeyDto>> getFileKey(@RequestBody GetFileKeyDto dto) {
+        return userRepository.findUserDocumentByToken(dto.getToken())
+                .flatMap(user -> Mono.zip(Mono.just(user), fileRepository.findFileDocumentByUuid(dto.getUuid())))
+                .flatMap(tuple2 -> {
+                    if (tuple2.getT2().getUserUuid().equals(tuple2.getT1().getUuid())) {
+                        return fileRepository.findFileDocumentByUuid(dto.getUuid())
+                                .then(Mono.fromCallable(() -> ResponseEntity.ok(new FileKeyDto(tuple2.getT2().getPassword()))));
+                    } else {
+                        return Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.FORBIDDEN).body(null));
+                    }
+                });
+    }
+
+    @PostMapping("/download")
+    public Flux<DataBuffer> download(@RequestBody DownloadRequestDto dto) {
+        return userRepository.findUserDocumentByToken(dto.getToken())
+                .flatMap(user -> Mono.zip(Mono.just(user), fileRepository.findFileDocumentByUuid(dto.getUuid())))
+                .flatMapMany(tuple2 -> {
+                    if (tuple2.getT2().getUserUuid().equals(tuple2.getT1().getUuid())) {
+                        return DataBufferUtils.read(new FileSystemResource(Paths.get(tuple2.getT2().getLocation())), new DefaultDataBufferFactory(), CHUNK_SIZE);
+                    } else {
+                        return Flux.just(null);
                     }
                 });
     }
