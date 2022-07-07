@@ -29,6 +29,7 @@ public class SchedulingConfig {
     public void scanJobs() {
         for (JobDocument job : jobRepository.findJobDocumentByStartedFalse()) {
             System.out.println(job.getUuid());
+
             executorService.submit(new JobHandler(job, jobRepository, fileService, restTemplate));
         }
     }

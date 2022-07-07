@@ -48,6 +48,8 @@ const File = (props) => {
     await writableStream.close();
 
     currentChunk = new Uint8Array(0);
+
+    alert("Download finished");
   }
 
   const downloadFile = async (symmetricKey, writableStream) => {

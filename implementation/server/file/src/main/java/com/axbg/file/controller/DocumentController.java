@@ -6,6 +6,8 @@ import com.axbg.file.pojo.FileTypeEnum;
 import com.axbg.file.repository.FileRepository;
 import com.axbg.file.repository.UserRepository;
 import com.axbg.file.service.WorkerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -17,6 +19,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -30,6 +33,8 @@ public class DocumentController {
     public static final String FILE_PERM_LOCATION = "/Users/axbg/Desktop/perm";
     private static final String CHUNK_SEPARATOR = "_";
     private static final int CHUNK_SIZE = 1000016;
+
+    private final Logger logger = LoggerFactory.getLogger(DocumentController.class);
 
     @Autowired
     private FileRepository fileRepository;
@@ -50,6 +55,7 @@ public class DocumentController {
                     fileDocument.setPassword(dto.getPassword());
                     return fileRepository.save(fileDocument);
                 }).flatMap(document -> {
+                    logger.info("Received request to create new file entry: {}", document.getUuid());
                     document.setTemporaryLocation(FILE_TEMP_LOCATION + "/" + document.getUuid());
                     document.setLocation(FILE_PERM_LOCATION + "/" + document.getUuid());
                     return fileRepository.save(document);
@@ -60,8 +66,10 @@ public class DocumentController {
     @PostMapping("/upload/chunk")
     public Mono<ResponseEntity<Boolean>> uploadChunk(@RequestPart String uuid, @RequestPart String order, @RequestPart("chunk") Mono<FilePart> file) {
         return fileRepository.findFileDocumentByUuid(uuid)
+                .publishOn(Schedulers.boundedElastic())
                 .flatMap(fileDocument -> file)
                 .flatMap(fileHandler -> {
+                    logger.info("Received chunk {} of file {}", order, uuid);
                     Path destination = Paths.get(FILE_TEMP_LOCATION + "/" + uuid + CHUNK_SEPARATOR + order);
 
                     return fileHandler.transferTo(destination)
@@ -75,6 +83,7 @@ public class DocumentController {
     public Mono<ResponseEntity<Boolean>> finalizeUpload(@RequestBody FinalizeUploadResponseDto dto) {
         return fileRepository.findFileDocumentByUuid(dto.getUuid())
                 .flatMap(file -> {
+                    logger.info("Finalizing upload of the file {} with original filename {}", dto.getUuid(), dto.getFilename());
                     file.setParts(dto.getParts());
                     file.setStatus(FileTypeEnum.UPLOADED);
                     file.setOriginalName(dto.getFilename());
@@ -109,10 +118,23 @@ public class DocumentController {
                 });
     }
 
+    @PostMapping("/remove/all")
+    public Mono<ResponseEntity<Boolean>> removeAllFiles(@RequestBody RemoveAllFileDto dto) {
+        return userRepository.findUserDocumentByToken(dto.getToken())
+                .flatMapMany(user -> fileRepository.findFileDocumentsByUserUuid(user.getUuid()))
+                .flatMap(fileDocument -> {
+                    File file = new File(fileDocument.getLocation());
+                    file.delete();
+                    return fileRepository.deleteById(fileDocument.getUuid());
+                })
+                .then(Mono.fromCallable(() -> ResponseEntity.ok(true)));
+    }
+
     @PostMapping("/notify")
     public Mono<ResponseEntity<Boolean>> notified(@RequestBody FileResultDto result) {
         return fileRepository.findFileDocumentByUuid(result.getUuid())
                 .flatMap(file -> {
+                    logger.info("Notified by the worker module about file {}, new status {}", result.getUuid(), result.getStatus().toString());
                     file.setStatus(result.getStatus());
                     return fileRepository.save(file);
                 }).then(Mono.just(ResponseEntity.ok(true)));

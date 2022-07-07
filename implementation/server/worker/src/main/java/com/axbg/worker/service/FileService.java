@@ -2,6 +2,9 @@ package com.axbg.worker.service;
 
 import com.axbg.worker.OrderedChunk;
 import com.axbg.worker.pojo.FileTypeEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -19,7 +22,11 @@ public class FileService {
     public static final String FILE_PERM_LOCATION = "/Users/axbg/Desktop/perm";
     public static final String CHUNK_SEPARATOR = "_";
 
+    private final Logger logger = LoggerFactory.getLogger(FileService.class);
+
     public FileTypeEnum handleFile(String uuid, Integer order) throws IOException {
+        logger.info("Recomposing file: {}", uuid);
+
         File tempDirectory = new File(FILE_TEMP_LOCATION);
 
         List<OrderedChunk> chunks = Arrays.stream(Objects.requireNonNull(tempDirectory.listFiles()))
@@ -28,7 +35,7 @@ public class FileService {
                 .sorted(Comparator.comparing(OrderedChunk::getOrder))
                 .toList();
 
-        if(chunks.size() != order) {
+        if (chunks.size() != order) {
             return FileTypeEnum.ERRORED;
         }
 
@@ -37,7 +44,7 @@ public class FileService {
 
         if (created) {
             try (FileOutputStream fos = new FileOutputStream(permFile, true)) {
-                for(OrderedChunk chunk : chunks){
+                for (OrderedChunk chunk : chunks) {
                     fos.write(Files.readAllBytes(chunk.getFile().toPath()));
                 }
             }
@@ -45,9 +52,9 @@ public class FileService {
             return FileTypeEnum.ERRORED;
         }
 
-        for(OrderedChunk chunk : chunks) {
-            chunk.getFile().delete();
-        }
+//        for(OrderedChunk chunk : chunks) {
+//            chunk.getFile().delete();
+//        }
 
         return FileTypeEnum.READY;
     }

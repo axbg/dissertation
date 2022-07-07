@@ -42,7 +42,8 @@ const Register = () => {
         publicKey: publicKey
       })
     });
-
+    
+    if(registerResult.ok) {
     // DOWNLOAD PRIVATE KEY
     alert("Select where to store the asymmetric private key");
     const privFileHandle = await window.showSaveFilePicker();
@@ -59,6 +60,9 @@ const Register = () => {
     // REDIRECT TO DASHBOARD
     alert("You can login now");
     navigate("/", {replace: true});
+    } else {
+      alert("An error occurred during registration");
+    }
   }
 
   return <div className={styles.Login}>

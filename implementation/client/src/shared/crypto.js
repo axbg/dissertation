@@ -56,8 +56,16 @@ export const generateRSAKeyPair = async (privateKeyPassword) => {
 };
 
 export const generateSecurePassword = () => {
-    // TODO use real key
-    return "1234123412341234";
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+
+    for (var i = 0; i < 16; i++) {
+        result += characters.charAt(Math.floor(Math.random() *
+            charactersLength));
+    }
+    
+    return result;
 };
 
 export const decryptPrivateKey = async (privateKey, privateKeyPassword) => {
@@ -92,13 +100,13 @@ export const exportSymmetricKey = async (key) => {
 }
 
 export const importSymmetricKey = async (key) => {
-    return crypto.subtle.importKey('raw', key, {"name": "AES-GCM"}, false, ['encrypt', 'decrypt']);
+    return crypto.subtle.importKey('raw', key, { "name": "AES-GCM" }, false, ['encrypt', 'decrypt']);
 }
 
-export const symmetricEncrypt = async(content, key) => {
-    return crypto.subtle.encrypt({"name": "AES-GCM", "iv": new Uint8Array(12)}, key, content);
+export const symmetricEncrypt = async (content, key) => {
+    return crypto.subtle.encrypt({ "name": "AES-GCM", "iv": new Uint8Array(12) }, key, content);
 }
 
-export const symmetricDecrypt = async(content, key) => {
-    return crypto.subtle.decrypt({"name": "AES-GCM", "iv": new Uint8Array(12)}, key, content);
+export const symmetricDecrypt = async (content, key) => {
+    return crypto.subtle.decrypt({ "name": "AES-GCM", "iv": new Uint8Array(12) }, key, content);
 }

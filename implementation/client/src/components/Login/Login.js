@@ -63,10 +63,13 @@ const Login = () => {
       });
       const loginAttemptJson = await loginAttempt.json();
 
+      console.log("Received encoded encrypted secret: " + loginAttemptJson.secret);
       const undecodedEncryptedSecret = base64ToArrayBuffer(loginAttemptJson.secret);
 
       // DECRYPT THE SECRET
       const secret = ab2str(await decryptWithPrivateKey(decPrivateKey, undecodedEncryptedSecret));
+
+      console.log("Decrypted login secret: " + secret);
       
       const loginFinalizeAttempt = await fetch(CONSTANTS.BACKEND_URL + "/user/login/finalize", 
       {

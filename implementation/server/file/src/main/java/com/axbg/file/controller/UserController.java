@@ -9,6 +9,8 @@ import com.axbg.file.dto.RegisterDto;
 import com.axbg.file.repository.LoginAttemptRepository;
 import com.axbg.file.repository.UserRepository;
 import com.axbg.file.service.CryptoService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,8 @@ public class UserController {
 
     @Autowired
     private CryptoService cryptoService;
+
+    private final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @PostMapping("/register")
     public Mono<ResponseEntity<String>> register(@RequestBody RegisterDto dto) {
@@ -59,6 +63,7 @@ public class UserController {
                 .flatMap(hashedPassword -> userRepository.findUserDocumentByUsernameAndPassword(dto.getUsername(), hashedPassword))
                 .flatMap(user -> Mono.zip(Mono.just(user), cryptoService.generateEncryptedSecret(user.getPublicKey())))
                 .flatMap(tuple -> {
+                    logger.info("Generated secret {} for user {}", tuple.getT2().getPlain(), tuple.getT1().getUsername());
                     Date now = new Date();
 
                     LoginAttemptDocument loginAttemptDocument = new LoginAttemptDocument();
